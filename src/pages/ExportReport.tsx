@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, FileText, FilePdf, FileSpreadsheet, Mail } from "lucide-react";
+import { Download, FileText, File, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -59,14 +59,14 @@ const ExportReport = () => {
                 <div className="flex items-center space-x-2 border rounded p-3 hover:bg-gray-50 cursor-pointer">
                   <RadioGroupItem value="pdf" id="pdf" />
                   <Label htmlFor="pdf" className="flex items-center cursor-pointer">
-                    <FilePdf className="mr-2 h-4 w-4 text-red-500" />
+                    <File className="mr-2 h-4 w-4 text-red-500" />
                     PDF Document
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 border rounded p-3 hover:bg-gray-50 cursor-pointer">
                   <RadioGroupItem value="excel" id="excel" />
                   <Label htmlFor="excel" className="flex items-center cursor-pointer">
-                    <FileSpreadsheet className="mr-2 h-4 w-4 text-green-500" />
+                    <FileText className="mr-2 h-4 w-4 text-green-500" />
                     Excel Spreadsheet
                   </Label>
                 </div>
