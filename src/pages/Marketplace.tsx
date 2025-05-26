@@ -84,175 +84,200 @@ const Marketplace = () => {
   const categories = ["all", ...Array.from(new Set(tools.map(tool => tool.category)))];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Tool Marketplace</h1>
-          <p className="text-muted-foreground">Discover and integrate the best testing tools for your workflow</p>
-        </div>
-        <Button>Submit Your Tool</Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-10 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-pink-200/30 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search tools and frameworks..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
-
-      <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-        <TabsList className="grid w-full grid-cols-7">
-          {categories.map(category => (
-            <TabsTrigger key={category} value={category} className="text-xs">
-              {category === "all" ? "All" : category}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value={selectedCategory} className="space-y-6">
-          {/* Featured Tools */}
+      <div className="relative z-10 p-6 space-y-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold mb-4">Featured Tools</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTools.slice(0, 3).map((tool) => (
-                <Card key={tool.name} className="relative overflow-hidden">
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="secondary">Featured</Badge>
-                  </div>
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                        <tool.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{tool.name}</CardTitle>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="flex items-center">
-                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs ml-1">{tool.rating}</span>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Tool Marketplace
+            </h1>
+            <p className="text-lg text-gray-600 mt-2">Discover and integrate the best testing tools for your workflow</p>
+          </div>
+          <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg">
+            Submit Your Tool
+          </Button>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search tools and frameworks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white/80 backdrop-blur-sm border-gray-200 shadow-sm"
+            />
+          </div>
+        </div>
+
+        <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+          <TabsList className="grid w-full grid-cols-7 bg-white/60 backdrop-blur-sm shadow-sm">
+            {categories.map(category => (
+              <TabsTrigger 
+                key={category} 
+                value={category} 
+                className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+              >
+                {category === "all" ? "All" : category}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          <TabsContent value={selectedCategory} className="space-y-6">
+            {/* Featured Tools */}
+            <div>
+              <h2 className="text-2xl font-semibold mb-4 text-gray-800">Featured Tools</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTools.slice(0, 3).map((tool) => (
+                  <Card key={tool.name} className="relative overflow-hidden bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-gradient-to-r from-orange-400 to-pink-500 text-white border-0">Featured</Badge>
+                    </div>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                          <tool.icon className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg text-gray-800">{tool.name}</CardTitle>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <span className="text-xs ml-1 text-gray-600">{tool.rating}</span>
+                            </div>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500">{tool.downloads} downloads</span>
                           </div>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{tool.downloads} downloads</span>
                         </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="mb-4">
-                      {tool.description}
-                    </CardDescription>
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {tool.tags.map(tag => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-primary">{tool.price}</span>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="mb-4 text-gray-600">
+                        {tool.description}
+                      </CardDescription>
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {tool.tags.map(tag => (
+                          <Badge key={tag} variant="outline" className="text-xs border-gray-200 text-gray-600">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-blue-600">{tool.price}</span>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" className="border-gray-200 hover:bg-gray-50">
+                            Learn More
+                          </Button>
+                          <Button size="sm" className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0">
+                            <Download className="mr-1 h-3 w-3" />
+                            Install
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* All Tools */}
+            <div>
+              <h2 className="text-2xl font-semibold mb-4 text-gray-800">All Tools</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTools.map((tool) => (
+                  <Card key={tool.name} className="bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 shadow-md">
+                          <tool.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg text-gray-800">{tool.name}</CardTitle>
+                          <Badge variant="outline" className="text-xs mt-1 border-blue-200 text-blue-600">
+                            {tool.category}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="mb-4 text-gray-600">
+                        {tool.description}
+                      </CardDescription>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm ml-1 text-gray-600">{tool.rating}</span>
+                          </div>
+                          <span className="text-sm text-gray-500">{tool.downloads}</span>
+                        </div>
+                        <span className="font-medium text-blue-600">{tool.price}</span>
+                      </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          Learn More
+                        <Button variant="outline" size="sm" className="flex-1 border-gray-200 hover:bg-gray-50">
+                          Details
                         </Button>
-                        <Button size="sm">
+                        <Button size="sm" className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0">
                           <Download className="mr-1 h-3 w-3" />
                           Install
                         </Button>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* All Tools */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">All Tools</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTools.map((tool) => (
-                <Card key={tool.name}>
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                        <tool.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{tool.name}</CardTitle>
-                        <Badge variant="outline" className="text-xs mt-1">
-                          {tool.category}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="mb-4">
-                      {tool.description}
-                    </CardDescription>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm ml-1">{tool.rating}</span>
-                        </div>
-                        <span className="text-sm text-muted-foreground">{tool.downloads}</span>
-                      </div>
-                      <span className="font-medium text-primary">{tool.price}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        Details
-                      </Button>
-                      <Button size="sm" className="flex-1">
-                        <Download className="mr-1 h-3 w-3" />
-                        Install
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Recommendations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recommended for You</CardTitle>
-          <CardDescription>Based on your current test suite and project needs</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <TestTube className="h-8 w-8 text-primary" />
-                <div>
-                  <h4 className="font-medium">Playwright for E2E Testing</h4>
-                  <p className="text-sm text-muted-foreground">Perfect for your React application testing needs</p>
-                </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              <Button size="sm">View Tool</Button>
             </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-4">
-                <Shield className="h-8 w-8 text-primary" />
-                <div>
-                  <h4 className="font-medium">SonarQube Code Quality</h4>
-                  <p className="text-sm text-muted-foreground">Enhance your code quality and security testing</p>
+          </TabsContent>
+        </Tabs>
+
+        {/* Recommendations */}
+        <Card className="bg-white/80 backdrop-blur-sm shadow-lg border-0">
+          <CardHeader>
+            <CardTitle className="text-gray-800">Recommended for You</CardTitle>
+            <CardDescription className="text-gray-600">Based on your current test suite and project needs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+                    <TestTube className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">Playwright for E2E Testing</h4>
+                    <p className="text-sm text-gray-600">Perfect for your React application testing needs</p>
+                  </div>
                 </div>
+                <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0">
+                  View Tool
+                </Button>
               </div>
-              <Button size="sm">View Tool</Button>
+              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gradient-to-r from-green-50 to-blue-50">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-blue-600">
+                    <Shield className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">SonarQube Code Quality</h4>
+                    <p className="text-sm text-gray-600">Enhance your code quality and security testing</p>
+                  </div>
+                </div>
+                <Button size="sm" className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white border-0">
+                  View Tool
+                </Button>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
