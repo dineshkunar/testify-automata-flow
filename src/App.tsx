@@ -1,9 +1,24 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+
+// Import all pages
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import TestCases from "./pages/TestCases";
+import Integrations from "./pages/Integrations";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import Onboarding from "./pages/Onboarding";
+import Marketplace from "./pages/Marketplace";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,9 +30,35 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/*" element={
+            <SidebarProvider>
+              <div className="min-h-screen flex w-full">
+                <AppSidebar />
+                <SidebarInset>
+                  <header className="flex h-16 items-center gap-2 border-b bg-sidebar px-4">
+                    <SidebarTrigger className="-ml-1" />
+                    <div className="h-4 w-px bg-sidebar-border mx-2" />
+                    <h1 className="text-lg font-semibold">TestFlow Pro</h1>
+                  </header>
+                  <main className="flex-1">
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/test-cases" element={<TestCases />} />
+                      <Route path="/integrations" element={<Integrations />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/marketplace" element={<Marketplace />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </main>
+                </SidebarInset>
+              </div>
+            </SidebarProvider>
+          } />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
