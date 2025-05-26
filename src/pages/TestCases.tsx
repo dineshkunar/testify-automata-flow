@@ -9,9 +9,24 @@ import { Badge } from "@/components/ui/badge";
 import { TestTube2, Plus, Search, Filter } from "lucide-react";
 import { TestCaseGenerator } from "@/components/TestCaseGenerator";
 import { TestCaseKanban } from "@/components/TestCaseKanban";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const TestCases = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleFilter = () => {
+    navigate('/filter-test-cases');
+  };
+
+  const handleNewTestCase = () => {
+    toast({
+      title: "Create Test Case",
+      description: "Opening new test case form...",
+    });
+  };
 
   return (
     <div className="p-6">
@@ -20,7 +35,7 @@ const TestCases = () => {
           <h1 className="text-3xl font-bold">Test Cases</h1>
           <p className="text-muted-foreground">Manage and track all your test cases</p>
         </div>
-        <Button>
+        <Button onClick={handleNewTestCase}>
           <Plus className="mr-2 h-4 w-4" />
           New Test Case
         </Button>
@@ -43,7 +58,7 @@ const TestCases = () => {
                 className="max-w-sm"
               />
             </div>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleFilter}>
               <Filter className="mr-2 h-4 w-4" />
               Filter
             </Button>

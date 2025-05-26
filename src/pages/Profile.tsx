@@ -1,3 +1,5 @@
+
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +8,58 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Mail, Phone, MapPin, Calendar, Trophy, Target } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
+  const [formData, setFormData] = useState({
+    firstName: "John",
+    lastName: "Doe",
+    email: "john.doe@acme.com",
+    phone: "+1 (555) 123-4567",
+    location: "San Francisco, CA",
+    jobTitle: "Senior QA Engineer",
+    bio: "Experienced QA engineer with 8+ years in test automation and quality assurance. Passionate about building robust testing frameworks and improving software quality."
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id.replace("-", "")]: value }));
+  };
+
+  const handleSaveChanges = () => {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsSubmitting(false);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully.",
+      });
+    }, 1000);
+  };
+
+  const handlePhotoChange = () => {
+    // Simulate file input click
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // Simulate photo update
+        toast({
+          title: "Photo Updated",
+          description: `New photo "${file.name}" has been uploaded.`,
+        });
+      }
+    };
+    input.click();
+  };
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #970747 0%, #FFFFFF 50%, #970747 100%)' }}>
       {/* Background decorative elements */}
@@ -42,7 +94,12 @@ const Profile = () => {
                     <AvatarFallback className="text-lg bg-gradient-to-br from-pink-500 to-pink-700 text-white">JD</AvatarFallback>
                   </Avatar>
                   <div>
-                    <Button variant="outline" size="sm" className="border-pink-200 hover:bg-pink-50">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-pink-200 hover:bg-pink-50"
+                      onClick={handlePhotoChange}
+                    >
                       Change Photo
                     </Button>
                     <p className="text-sm text-muted-foreground mt-1">JPG, PNG or GIF. Max size 2MB.</p>
@@ -52,27 +109,53 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="first-name">First Name</Label>
-                    <Input id="first-name" defaultValue="John" />
+                    <Input 
+                      id="first-name" 
+                      value={formData.firstName} 
+                      onChange={handleInputChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="last-name">Last Name</Label>
-                    <Input id="last-name" defaultValue="Doe" />
+                    <Input 
+                      id="last-name" 
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue="john.doe@acme.com" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={formData.email}
+                      onChange={handleInputChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" type="tel" defaultValue="+1 (555) 123-4567" />
+                    <Input 
+                      id="phone" 
+                      type="tel" 
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="location">Location</Label>
-                    <Input id="location" defaultValue="San Francisco, CA" />
+                    <Input 
+                      id="location" 
+                      value={formData.location}
+                      onChange={handleInputChange}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="job-title">Job Title</Label>
-                    <Input id="job-title" defaultValue="Senior QA Engineer" />
+                    <Input 
+                      id="job-title" 
+                      value={formData.jobTitle}
+                      onChange={handleInputChange}
+                    />
                   </div>
                 </div>
 
@@ -80,13 +163,18 @@ const Profile = () => {
                   <Label htmlFor="bio">Bio</Label>
                   <Textarea 
                     id="bio" 
-                    defaultValue="Experienced QA engineer with 8+ years in test automation and quality assurance. Passionate about building robust testing frameworks and improving software quality."
+                    value={formData.bio}
+                    onChange={handleInputChange}
                     className="min-h-24"
                   />
                 </div>
 
-                <Button className="bg-gradient-to-r from-pink-600 to-pink-800 hover:from-pink-700 hover:to-pink-900 text-white">
-                  Save Changes
+                <Button 
+                  className="bg-gradient-to-r from-pink-600 to-pink-800 hover:from-pink-700 hover:to-pink-900 text-white"
+                  onClick={handleSaveChanges}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
               </CardContent>
             </Card>

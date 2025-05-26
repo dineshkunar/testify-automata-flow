@@ -6,9 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Star, Download, Zap, TestTube, Shield, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const tools = [
   {
+    id: "selenium",
     name: "Selenium WebDriver",
     description: "Automate web browsers for comprehensive UI testing",
     category: "UI Testing",
@@ -19,6 +22,7 @@ const tools = [
     tags: ["Automation", "Cross-browser", "Popular"]
   },
   {
+    id: "jest",
     name: "Jest Testing Framework",
     description: "JavaScript testing framework with built-in assertions",
     category: "Unit Testing",
@@ -29,6 +33,7 @@ const tools = [
     tags: ["JavaScript", "Unit Tests", "Mocking"]
   },
   {
+    id: "postman",
     name: "Postman API Testing",
     description: "Complete API testing and documentation platform",
     category: "API Testing",
@@ -39,6 +44,7 @@ const tools = [
     tags: ["API", "REST", "Documentation"]
   },
   {
+    id: "owasp",
     name: "OWASP ZAP Security",
     description: "Automated security vulnerability scanner",
     category: "Security Testing",
@@ -49,6 +55,7 @@ const tools = [
     tags: ["Security", "OWASP", "Vulnerability"]
   },
   {
+    id: "jmeter",
     name: "JMeter Load Testing",
     description: "Performance and load testing for web applications",
     category: "Performance",
@@ -59,6 +66,7 @@ const tools = [
     tags: ["Performance", "Load Testing", "Apache"]
   },
   {
+    id: "cypress",
     name: "Cypress E2E Testing",
     description: "Modern end-to-end testing for web applications",
     category: "E2E Testing",
@@ -73,6 +81,8 @@ const tools = [
 const Marketplace = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const filteredTools = tools.filter(tool => {
     const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,24 +93,45 @@ const Marketplace = () => {
 
   const categories = ["all", ...Array.from(new Set(tools.map(tool => tool.category)))];
 
+  const handleViewTool = (toolId: string) => {
+    navigate(`/marketplace/${toolId}`);
+  };
+
+  const handleInstall = (toolName: string) => {
+    toast({
+      title: "Installation Started",
+      description: `Installing ${toolName}. This may take a few moments.`,
+    });
+  };
+
+  const handleSubmitTool = () => {
+    toast({
+      title: "Submit Your Tool",
+      description: "Opening tool submission form...",
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #970747 0%, #FFFFFF 50%, #970747 100%)' }}>
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-10 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-pink-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-10 w-96 h-96 bg-pink-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-purple-200/30 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-pink-100 bg-clip-text text-transparent">
               Tool Marketplace
             </h1>
-            <p className="text-lg text-gray-600 mt-2">Discover and integrate the best testing tools for your workflow</p>
+            <p className="text-lg text-white/90 mt-2">Discover and integrate the best testing tools for your workflow</p>
           </div>
-          <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg">
+          <Button 
+            onClick={handleSubmitTool}
+            className="bg-gradient-to-r from-pink-600 to-pink-800 hover:from-pink-700 hover:to-pink-900 text-white shadow-lg"
+          >
             Submit Your Tool
           </Button>
         </div>
@@ -124,7 +155,7 @@ const Marketplace = () => {
               <TabsTrigger 
                 key={category} 
                 value={category} 
-                className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                className="text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-600 data-[state=active]:to-pink-800 data-[state=active]:text-white"
               >
                 {category === "all" ? "All" : category}
               </TabsTrigger>
@@ -134,16 +165,16 @@ const Marketplace = () => {
           <TabsContent value={selectedCategory} className="space-y-6">
             {/* Featured Tools */}
             <div>
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">Featured Tools</h2>
+              <h2 className="text-2xl font-semibold mb-4 text-white">Featured Tools</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTools.slice(0, 3).map((tool) => (
-                  <Card key={tool.name} className="relative overflow-hidden bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                  <Card key={tool.id} className="relative overflow-hidden bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 border-0">
                     <div className="absolute top-2 right-2">
-                      <Badge className="bg-gradient-to-r from-orange-400 to-pink-500 text-white border-0">Featured</Badge>
+                      <Badge className="bg-gradient-to-r from-pink-600 to-pink-800 text-white border-0">Featured</Badge>
                     </div>
                     <CardHeader>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-600 to-pink-800 shadow-lg">
                           <tool.icon className="h-6 w-6 text-white" />
                         </div>
                         <div>
@@ -171,12 +202,21 @@ const Marketplace = () => {
                         ))}
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-blue-600">{tool.price}</span>
+                        <span className="font-medium text-pink-600">{tool.price}</span>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" className="border-gray-200 hover:bg-gray-50">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-gray-200 hover:bg-gray-50"
+                            onClick={() => handleViewTool(tool.id)}
+                          >
                             Learn More
                           </Button>
-                          <Button size="sm" className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0">
+                          <Button 
+                            size="sm" 
+                            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0"
+                            onClick={() => handleInstall(tool.name)}
+                          >
                             <Download className="mr-1 h-3 w-3" />
                             Install
                           </Button>
@@ -190,18 +230,18 @@ const Marketplace = () => {
 
             {/* All Tools */}
             <div>
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">All Tools</h2>
+              <h2 className="text-2xl font-semibold mb-4 text-white">All Tools</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTools.map((tool) => (
-                  <Card key={tool.name} className="bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 border-0">
+                  <Card key={tool.id} className="bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 border-0">
                     <CardHeader>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 shadow-md">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-pink-600 to-pink-800 shadow-md">
                           <tool.icon className="h-5 w-5 text-white" />
                         </div>
                         <div>
                           <CardTitle className="text-lg text-gray-800">{tool.name}</CardTitle>
-                          <Badge variant="outline" className="text-xs mt-1 border-blue-200 text-blue-600">
+                          <Badge variant="outline" className="text-xs mt-1 border-pink-200 text-pink-600">
                             {tool.category}
                           </Badge>
                         </div>
@@ -219,13 +259,22 @@ const Marketplace = () => {
                           </div>
                           <span className="text-sm text-gray-500">{tool.downloads}</span>
                         </div>
-                        <span className="font-medium text-blue-600">{tool.price}</span>
+                        <span className="font-medium text-pink-600">{tool.price}</span>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 border-gray-200 hover:bg-gray-50">
-                          Details
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 border-gray-200 hover:bg-gray-50"
+                          onClick={() => handleViewTool(tool.id)}
+                        >
+                          Learn More
                         </Button>
-                        <Button size="sm" className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0"
+                          onClick={() => handleInstall(tool.name)}
+                        >
                           <Download className="mr-1 h-3 w-3" />
                           Install
                         </Button>
@@ -256,7 +305,11 @@ const Marketplace = () => {
                     <p className="text-sm text-gray-600">Perfect for your React application testing needs</p>
                   </div>
                 </div>
-                <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0">
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0"
+                  onClick={() => handleViewTool("playwright")}
+                >
                   View Tool
                 </Button>
               </div>
@@ -270,7 +323,11 @@ const Marketplace = () => {
                     <p className="text-sm text-gray-600">Enhance your code quality and security testing</p>
                   </div>
                 </div>
-                <Button size="sm" className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white border-0">
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white border-0"
+                  onClick={() => handleViewTool("sonarqube")}
+                >
                   View Tool
                 </Button>
               </div>

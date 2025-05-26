@@ -4,8 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { BarChart3, TestTube2, Clock, CheckCircle, AlertTriangle, TrendingUp, Users, Target } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
+  const handleGenerateReport = () => {
+    navigate('/generate-report');
+  };
+
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #970747 0%, #FFFFFF 50%, #970747 100%)' }}>
       <div className="relative z-10 p-6 space-y-6">
@@ -16,7 +23,10 @@ const Dashboard = () => {
             </h1>
             <p className="text-white/90 text-lg">Monitor your testing progress and team performance</p>
           </div>
-          <Button className="bg-gradient-to-r from-pink-600 to-pink-800 hover:from-pink-700 hover:to-pink-900 text-white">
+          <Button 
+            className="bg-gradient-to-r from-pink-600 to-pink-800 hover:from-pink-700 hover:to-pink-900 text-white"
+            onClick={handleGenerateReport}
+          >
             Generate Report
           </Button>
         </div>

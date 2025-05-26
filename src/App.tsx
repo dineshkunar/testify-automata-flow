@@ -18,8 +18,15 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Marketplace from "./pages/Marketplace";
+import MarketplaceTool from "./pages/MarketplaceTool";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import GenerateReport from "./pages/GenerateReport";
+import FilterTestCases from "./pages/FilterTestCases";
+import SetupWizard from "./pages/SetupWizard";
+import IntegrationDocs from "./pages/IntegrationDocs";
+import ReportDateRange from "./pages/ReportDateRange";
+import ExportReport from "./pages/ExportReport";
 
 const queryClient = new QueryClient();
 
@@ -50,8 +57,18 @@ const App = () => (
                       <Route path="/integrations" element={<Integrations />} />
                       <Route path="/reports" element={<Reports />} />
                       <Route path="/marketplace" element={<Marketplace />} />
+                      <Route path="/marketplace/:toolId" element={<MarketplaceTool />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/profile" element={<Profile />} />
+                      
+                      {/* New routes */}
+                      <Route path="/generate-report" element={<GenerateReport />} />
+                      <Route path="/filter-test-cases" element={<FilterTestCases />} />
+                      <Route path="/setup-wizard" element={<SetupWizard />} />
+                      <Route path="/integration-docs" element={<IntegrationDocs />} />
+                      <Route path="/report-date-range" element={<ReportDateRange />} />
+                      <Route path="/export-report" element={<ExportReport />} />
+                      
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>
