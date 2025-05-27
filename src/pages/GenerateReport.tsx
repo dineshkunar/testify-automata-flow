@@ -13,6 +13,7 @@ import { CalendarIcon, Download, FileText, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const GenerateReport = () => {
   const [reportName, setReportName] = useState("");
@@ -22,9 +23,10 @@ const GenerateReport = () => {
   const [includeCharts, setIncludeCharts] = useState(true);
   const [includeDetails, setIncludeDetails] = useState(true);
   const [description, setDescription] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     if (!reportName || !reportType || !dateFrom || !dateTo) {
       toast({
         title: "Missing Information",
@@ -34,10 +36,46 @@ const GenerateReport = () => {
       return;
     }
 
-    toast({
-      title: "Report Generated",
-      description: `${reportName} has been generated successfully.`,
-    });
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .insert({
+          name: reportName,
+          type: reportType,
+          description,
+          date_from: format(dateFrom, 'yyyy-MM-dd'),
+          date_to: format(dateTo, 'yyyy-MM-dd'),
+          include_charts: includeCharts,
+          include_details: includeDetails,
+          status: 'generating'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Report Generated",
+        description: `${reportName} has been generated successfully.`,
+      });
+
+      // Reset form
+      setReportName("");
+      setReportType("");
+      setDateFrom(undefined);
+      setDateTo(undefined);
+      setDescription("");
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -156,7 +194,7 @@ const GenerateReport = () => {
                   <Checkbox
                     id="include-charts"
                     checked={includeCharts}
-                    onCheckedChange={setIncludeCharts}
+                    onCheckedChange={(checked) => setIncludeCharts(!!checked)}
                   />
                   <label htmlFor="include-charts" className="text-sm font-medium">
                     Include charts and graphs
@@ -166,7 +204,7 @@ const GenerateReport = () => {
                   <Checkbox
                     id="include-details"
                     checked={includeDetails}
-                    onCheckedChange={setIncludeDetails}
+                    onCheckedChange={(checked) => setIncludeDetails(!!checked)}
                   />
                   <label htmlFor="include-details" className="text-sm font-medium">
                     Include detailed test case information
@@ -189,10 +227,11 @@ const GenerateReport = () => {
             <div className="flex gap-4 pt-4">
               <Button
                 onClick={handleGenerateReport}
+                disabled={isGenerating}
                 className="bg-gradient-to-r from-pink-600 to-pink-800 hover:from-pink-700 hover:to-pink-900 text-white"
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Generate Report
+                {isGenerating ? "Generating..." : "Generate Report"}
               </Button>
               <Button
                 variant="outline"
