@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -221,15 +220,15 @@ const MarketplaceTool = () => {
                             # Install with npm<br/>
                             npm install selenium-webdriver<br/><br/>
                             # Basic example<br/>
-                            const {"{WebDriver, Builder, By}"} = require('selenium-webdriver');<br/>
-                            const driver = new Builder().forBrowser('chrome').build();
+                            const {"{WebDriver, Builder, By}"} = require(&apos;selenium-webdriver&apos;);<br/>
+                            const driver = new Builder().forBrowser(&apos;chrome&apos;).build();
                           </div>
                         ) : tool.name === "Jest Testing Framework" ? (
                           <div>
                             # Install with npm<br/>
                             npm install --save-dev jest<br/><br/>
                             # Basic example<br/>
-                            test('adds 1 + 2 to equal 3', () => {"{"}<br/>
+                            test(&apos;adds 1 + 2 to equal 3&apos;, () =&gt; {"{"}<br/>
                             {"  "}expect(1 + 2).toBe(3);<br/>
                             {"}"});
                           </div>
@@ -238,9 +237,9 @@ const MarketplaceTool = () => {
                             # Install with npm<br/>
                             npm install cypress<br/><br/>
                             # Basic example<br/>
-                            describe('My First Test', () => {"{"}<br/>
-                            {"  "}it('Visits the Kitchen Sink', () => {"{"}<br/>
-                            {"    "}cy.visit('https://example.cypress.io');<br/>
+                            describe(&apos;My First Test&apos;, () =&gt; {"{"}<br/>
+                            {"  "}it(&apos;Visits the Kitchen Sink&apos;, () =&gt; {"{"}<br/>
+                            {"    "}cy.visit(&apos;https://example.cypress.io&apos;);<br/>
                             {"  "}{"}"});<br/>
                             {"}"});
                           </div>
