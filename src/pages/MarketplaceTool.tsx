@@ -216,35 +216,34 @@ const MarketplaceTool = () => {
                       <h3 className="text-lg font-semibold mb-2">Quick Start</h3>
                       <div className="bg-gray-100 p-3 rounded text-sm font-mono">
                         <Code className="inline mr-2 h-4 w-4" />
-                        {/* Example code block based on the tool */}
                         {tool.name === "Selenium WebDriver" ? (
-                          <>
+                          <div>
                             # Install with npm<br/>
                             npm install selenium-webdriver<br/><br/>
                             # Basic example<br/>
-                            const {'{WebDriver, Builder, By}'} = require('selenium-webdriver');<br/>
+                            const {"{WebDriver, Builder, By}"} = require('selenium-webdriver');<br/>
                             const driver = new Builder().forBrowser('chrome').build();
-                          </>
+                          </div>
                         ) : tool.name === "Jest Testing Framework" ? (
-                          <>
+                          <div>
                             # Install with npm<br/>
                             npm install --save-dev jest<br/><br/>
                             # Basic example<br/>
-                            test('adds 1 + 2 to equal 3', () => {'{'}<br/>
-                            {'  '}expect(1 + 2).toBe(3);<br/>
-                            {'}'});
-                          </>
+                            test('adds 1 + 2 to equal 3', () => {"{"}<br/>
+                            {"  "}expect(1 + 2).toBe(3);<br/>
+                            {"}"});
+                          </div>
                         ) : (
-                          <>
+                          <div>
                             # Install with npm<br/>
                             npm install cypress<br/><br/>
                             # Basic example<br/>
-                            describe('My First Test', () => {'{'}<br/>
-                            {'  '}it('Visits the Kitchen Sink', () => {'{'}<br/>
-                            {'    '}cy.visit('https://example.cypress.io');<br/>
-                            {'  '}{'}'});<br/>
-                            {'}'});
-                          </>
+                            describe('My First Test', () => {"{"}<br/>
+                            {"  "}it('Visits the Kitchen Sink', () => {"{"}<br/>
+                            {"    "}cy.visit('https://example.cypress.io');<br/>
+                            {"  "}{"}"});<br/>
+                            {"}"});
+                          </div>
                         )}
                       </div>
                     </div>
