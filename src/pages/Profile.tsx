@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,58 +7,184 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Mail, Phone, MapPin, Calendar, Trophy, Target } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Trophy, Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const [formData, setFormData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@acme.com",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    jobTitle: "Senior QA Engineer",
-    bio: "Experienced QA engineer with 8+ years in test automation and quality assurance. Passionate about building robust testing frameworks and improving software quality."
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    location: "",
+    jobTitle: "",
+    bio: ""
   });
-
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData({
+          firstName: data.first_name || "",
+          lastName: data.last_name || "",
+          email: data.email || user.email || "",
+          phone: data.preferences?.profile?.phone || "",
+          location: data.preferences?.profile?.location || "",
+          jobTitle: data.preferences?.profile?.jobTitle || "",
+          bio: data.preferences?.profile?.bio || ""
+        });
+        setAvatarUrl(data.avatar_url);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id.replace("-", "")]: value }));
+    const fieldName = id.replace("-", "");
+    setFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleSaveChanges = () => {
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error('You must select an image to upload.');
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error('User not authenticated');
+
+      const fileName = `${user.id}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const avatarUrl = data.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setAvatarUrl(avatarUrl);
+      toast({
+        title: "Photo Updated",
+        description: "Your profile photo has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload photo",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSaveChanges = async () => {
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('preferences')
+        .eq('id', user.id)
+        .single();
+
+      const updatedPreferences = {
+        ...currentProfile?.preferences,
+        profile: {
+          phone: formData.phone,
+          location: formData.location,
+          jobTitle: formData.jobTitle,
+          bio: formData.bio
+        }
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          preferences: updatedPreferences,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
       toast({
         title: "Profile Updated",
         description: "Your profile information has been saved successfully.",
       });
-    }, 1000);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handlePhotoChange = () => {
-    // Simulate file input click
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        // Simulate photo update
-        toast({
-          title: "Photo Updated",
-          description: `New photo "${file.name}" has been uploaded.`,
-        });
-      }
-    };
-    input.click();
-  };
+  if (loading) {
+    return <div className="text-center py-8">Loading profile...</div>;
+  }
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #970747 0%, #FFFFFF 50%, #970747 100%)' }}>
@@ -90,17 +216,37 @@ const Profile = () => {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
                   <Avatar className="h-20 w-20 ring-4 ring-pink-200">
-                    <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-                    <AvatarFallback className="text-lg bg-gradient-to-br from-pink-500 to-pink-700 text-white">JD</AvatarFallback>
+                    <AvatarImage src={avatarUrl || "/placeholder-avatar.jpg"} alt="Profile" />
+                    <AvatarFallback className="text-lg bg-gradient-to-br from-pink-500 to-pink-700 text-white">
+                      {formData.firstName?.[0]}{formData.lastName?.[0]}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
+                    <input
+                      type="file"
+                      id="avatar-upload"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="border-pink-200 hover:bg-pink-50"
-                      onClick={handlePhotoChange}
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                      disabled={uploading}
                     >
-                      Change Photo
+                      {uploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="mr-2 h-4 w-4" />
+                          Change Photo
+                        </>
+                      )}
                     </Button>
                     <p className="text-sm text-muted-foreground mt-1">JPG, PNG or GIF. Max size 2MB.</p>
                   </div>
@@ -166,6 +312,7 @@ const Profile = () => {
                     value={formData.bio}
                     onChange={handleInputChange}
                     className="min-h-24"
+                    placeholder="Tell us about yourself..."
                   />
                 </div>
 
@@ -174,7 +321,14 @@ const Profile = () => {
                   onClick={handleSaveChanges}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Saving..." : "Save Changes"}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -265,15 +419,15 @@ const Profile = () => {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Mail className="h-4 w-4 text-pink-600" />
-                  <span className="text-sm">john.doe@acme.com</span>
+                  <span className="text-sm">{formData.email || "Not provided"}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="h-4 w-4 text-pink-600" />
-                  <span className="text-sm">+1 (555) 123-4567</span>
+                  <span className="text-sm">{formData.phone || "Not provided"}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <MapPin className="h-4 w-4 text-pink-600" />
-                  <span className="text-sm">San Francisco, CA</span>
+                  <span className="text-sm">{formData.location || "Not provided"}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar className="h-4 w-4 text-pink-600" />

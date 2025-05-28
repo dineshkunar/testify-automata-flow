@@ -1,161 +1,89 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Wand2, FileText, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Wand2, Download, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface GeneratedTestCase {
-  title: string;
-  description: string;
-  steps: string[];
-  expectedResult: string;
-  priority: string;
-  type: string;
-}
-
 export const TestCaseGenerator = () => {
-  const [requirements, setRequirements] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [testType, setTestType] = useState("");
   const [priority, setPriority] = useState("");
   const [environment, setEnvironment] = useState("");
-  const [testData, setTestData] = useState("");
-  const [includeEdgeCases, setIncludeEdgeCases] = useState(false);
-  const [includeNegativeTests, setIncludeNegativeTests] = useState(false);
-  const [includePerformance, setIncludePerformance] = useState(false);
-  const [includeSecurity, setIncludeSecurity] = useState(false);
+  const [includeSteps, setIncludeSteps] = useState(true);
+  const [includeExpected, setIncludeExpected] = useState(true);
+  const [includePreconditions, setIncludePreconditions] = useState(false);
+  const [includeTestData, setIncludeTestData] = useState(false);
+  const [generatedTests, setGeneratedTests] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedTestCases, setGeneratedTestCases] = useState<GeneratedTestCase[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const generateTestCases = async () => {
-    if (!requirements || !testType || !priority) {
+    if (!prompt.trim()) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
+        title: "Error",
+        description: "Please enter a description for test case generation",
         variant: "destructive",
       });
       return;
     }
 
     setIsGenerating(true);
-    
     try {
-      // AI-like test case generation based on requirements
-      const baseTestCases: GeneratedTestCase[] = [
+      // Simulate AI generation with realistic test cases
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const mockTestCases = [
         {
-          title: `Valid ${requirements} Test`,
-          description: `Verify that ${requirements} works correctly with valid inputs`,
-          steps: [
-            "Navigate to the relevant page/section",
-            "Enter valid data as per requirements",
-            "Submit/execute the action",
-            "Verify successful completion"
-          ],
-          expectedResult: `${requirements} should complete successfully`,
-          priority,
-          type: testType
+          title: `Verify ${prompt} - Happy Path`,
+          description: `Test the main functionality of ${prompt} with valid inputs`,
+          type: testType || "functional",
+          priority: priority || "medium",
+          environment: environment || "staging",
+          steps: includeSteps ? [
+            "Navigate to the application",
+            "Enter valid test data",
+            "Submit the form",
+            "Verify the result"
+          ] : [],
+          expected_result: includeExpected ? "The system should process the request successfully and display the expected outcome" : "",
+          test_data: includeTestData ? "Valid test data set 1" : "",
         },
         {
-          title: `Invalid Input ${requirements} Test`,
-          description: `Verify that ${requirements} handles invalid inputs correctly`,
-          steps: [
-            "Navigate to the relevant page/section",
-            "Enter invalid data",
-            "Attempt to submit/execute",
-            "Verify appropriate error handling"
-          ],
-          expectedResult: "System should display appropriate error message",
-          priority,
-          type: testType
+          title: `Verify ${prompt} - Error Handling`,
+          description: `Test error scenarios for ${prompt}`,
+          type: testType || "negative",
+          priority: priority || "high",
+          environment: environment || "staging",
+          steps: includeSteps ? [
+            "Navigate to the application",
+            "Enter invalid test data",
+            "Submit the form",
+            "Verify error handling"
+          ] : [],
+          expected_result: includeExpected ? "The system should display appropriate error messages and handle the error gracefully" : "",
+          test_data: includeTestData ? "Invalid test data set 1" : "",
         }
       ];
 
-      let testCases = [...baseTestCases];
-
-      // Add edge cases if requested
-      if (includeEdgeCases) {
-        testCases.push({
-          title: `${requirements} Edge Case Test`,
-          description: `Test edge cases for ${requirements}`,
-          steps: [
-            "Set up edge case scenario",
-            "Execute the test with boundary values",
-            "Verify system behavior"
-          ],
-          expectedResult: "System should handle edge cases gracefully",
-          priority,
-          type: testType
-        });
-      }
-
-      // Add negative tests if requested
-      if (includeNegativeTests) {
-        testCases.push({
-          title: `${requirements} Negative Test`,
-          description: `Verify negative scenarios for ${requirements}`,
-          steps: [
-            "Set up negative test scenario",
-            "Execute with invalid conditions",
-            "Verify error handling"
-          ],
-          expectedResult: "System should fail gracefully with proper error messages",
-          priority,
-          type: testType
-        });
-      }
-
-      // Add performance tests if requested
-      if (includePerformance) {
-        testCases.push({
-          title: `${requirements} Performance Test`,
-          description: `Verify performance requirements for ${requirements}`,
-          steps: [
-            "Set up performance monitoring",
-            "Execute with expected load",
-            "Measure response times",
-            "Verify performance criteria"
-          ],
-          expectedResult: "System should meet performance requirements",
-          priority,
-          type: "performance"
-        });
-      }
-
-      // Add security tests if requested
-      if (includeSecurity) {
-        testCases.push({
-          title: `${requirements} Security Test`,
-          description: `Verify security aspects of ${requirements}`,
-          steps: [
-            "Identify security test vectors",
-            "Execute security tests",
-            "Verify authentication/authorization",
-            "Check for vulnerabilities"
-          ],
-          expectedResult: "System should be secure against common vulnerabilities",
-          priority,
-          type: "security"
-        });
-      }
-
-      setGeneratedTestCases(testCases);
-
+      setGeneratedTests(mockTestCases);
       toast({
-        title: "Test Cases Generated!",
-        description: `Successfully generated ${testCases.length} test cases`,
+        title: "Success",
+        description: `Generated ${mockTestCases.length} test cases successfully!`,
       });
     } catch (error) {
       console.error('Error generating test cases:', error);
       toast({
         title: "Error",
-        description: "Failed to generate test cases",
+        description: "Failed to generate test cases. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -163,36 +91,25 @@ export const TestCaseGenerator = () => {
     }
   };
 
-  const saveTestCasesToDatabase = async () => {
-    if (generatedTestCases.length === 0) {
+  const saveTestCases = async () => {
+    if (generatedTests.length === 0) {
       toast({
-        title: "No Test Cases",
-        description: "Please generate test cases first",
+        title: "Error",
+        description: "No test cases to save",
         variant: "destructive",
       });
       return;
     }
 
+    setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to save test cases",
-          variant: "destructive",
-        });
-        return;
+        throw new Error('User not authenticated');
       }
 
-      const testCasesToInsert = generatedTestCases.map(tc => ({
-        title: tc.title,
-        description: tc.description,
-        type: tc.type,
-        priority: tc.priority,
-        steps: JSON.stringify(tc.steps),
-        expected_result: tc.expectedResult,
-        environment: environment || 'Web',
-        test_data: testData || 'Standard test data',
+      const testCasesToInsert = generatedTests.map(testCase => ({
+        ...testCase,
         user_id: user.id,
         status: 'todo'
       }));
@@ -204,105 +121,106 @@ export const TestCaseGenerator = () => {
       if (error) throw error;
 
       toast({
-        title: "Test Cases Saved",
-        description: `${generatedTestCases.length} test cases saved to database`,
+        title: "Success",
+        description: `Saved ${generatedTests.length} test cases to database!`,
       });
-
-      // Reset form
-      setRequirements("");
-      setTestType("");
-      setPriority("");
-      setEnvironment("");
-      setTestData("");
-      setGeneratedTestCases([]);
-      setIncludeEdgeCases(false);
-      setIncludeNegativeTests(false);
-      setIncludePerformance(false);
-      setIncludeSecurity(false);
+      
+      // Clear generated tests after saving
+      setGeneratedTests([]);
+      setPrompt("");
     } catch (error) {
       console.error('Error saving test cases:', error);
       toast({
         title: "Error",
-        description: "Failed to save test cases to database",
+        description: "Failed to save test cases. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const exportTestCases = () => {
-    if (generatedTestCases.length === 0) return;
-    
-    const exportData = {
-      generatedAt: new Date().toISOString(),
-      requirements,
-      testType,
-      priority,
-      testCases: generatedTestCases
-    };
-    
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    if (generatedTests.length === 0) {
+      toast({
+        title: "Error",
+        description: "No test cases to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const csvContent = [
+      ['Title', 'Description', 'Type', 'Priority', 'Environment', 'Steps', 'Expected Result', 'Test Data'],
+      ...generatedTests.map(tc => [
+        tc.title,
+        tc.description,
+        tc.type,
+        tc.priority,
+        tc.environment,
+        tc.steps.join('; '),
+        tc.expected_result,
+        tc.test_data
+      ])
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `generated_test_cases_${Date.now()}.json`;
-    document.body.appendChild(a);
+    a.download = 'generated-test-cases.csv';
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
+    window.URL.revokeObjectURL(url);
+
     toast({
-      title: "Export Complete",
-      description: "Test cases exported successfully",
+      title: "Success",
+      description: "Test cases exported successfully!",
     });
   };
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-0">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wand2 className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-gray-800">
+            <Wand2 className="h-5 w-5 text-purple-600" />
             AI Test Case Generator
           </CardTitle>
-          <CardDescription>
-            Generate comprehensive test cases automatically from your requirements
-          </CardDescription>
+          <CardDescription>Generate comprehensive test cases using AI based on your requirements</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="requirements">Requirements/User Story *</Label>
-                <Textarea
-                  id="requirements"
-                  placeholder="Describe the feature or user story you want to test..."
-                  value={requirements}
-                  onChange={(e) => setRequirements(e.target.value)}
-                  className="min-h-32"
-                />
-              </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="prompt">Feature/Functionality Description</Label>
+              <Textarea
+                id="prompt"
+                placeholder="Describe the feature or functionality you want to test (e.g., 'User login with email and password')"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="min-h-20"
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="test-type">Test Type *</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Test Type</Label>
                 <Select value={testType} onValueChange={setTestType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select test type" />
+                    <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="smoke">Smoke Tests</SelectItem>
-                    <SelectItem value="regression">Regression Tests</SelectItem>
-                    <SelectItem value="integration">Integration Tests</SelectItem>
-                    <SelectItem value="unit">Unit Tests</SelectItem>
-                    <SelectItem value="e2e">End-to-End Tests</SelectItem>
-                    <SelectItem value="functional">Functional Tests</SelectItem>
-                    <SelectItem value="whitebox">White-box Tests</SelectItem>
+                    <SelectItem value="functional">Functional</SelectItem>
+                    <SelectItem value="smoke">Smoke</SelectItem>
+                    <SelectItem value="regression">Regression</SelectItem>
+                    <SelectItem value="integration">Integration</SelectItem>
+                    <SelectItem value="negative">Negative</SelectItem>
+                    <SelectItem value="performance">Performance</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="priority">Priority Level *</Label>
+              <div className="space-y-2">
+                <Label>Priority</Label>
                 <Select value={priority} onValueChange={setPriority}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
@@ -315,123 +233,150 @@ export const TestCaseGenerator = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label>Environment</Label>
+                <Select value={environment} onValueChange={setEnvironment}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select environment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="development">Development</SelectItem>
+                    <SelectItem value="staging">Staging</SelectItem>
+                    <SelectItem value="production">Production</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <Label>Additional Options</Label>
-                <div className="space-y-3 mt-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="edge-cases" 
-                      checked={includeEdgeCases}
-                      onCheckedChange={setIncludeEdgeCases}
-                    />
-                    <Label htmlFor="edge-cases">Include edge cases</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="negative-tests" 
-                      checked={includeNegativeTests}
-                      onCheckedChange={setIncludeNegativeTests}
-                    />
-                    <Label htmlFor="negative-tests">Generate negative test cases</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="performance" 
-                      checked={includePerformance}
-                      onCheckedChange={setIncludePerformance}
-                    />
-                    <Label htmlFor="performance">Include performance tests</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="security" 
-                      checked={includeSecurity}
-                      onCheckedChange={setIncludeSecurity}
-                    />
-                    <Label htmlFor="security">Add security test cases</Label>
-                  </div>
+            <div className="space-y-3">
+              <Label>Include in Generated Test Cases:</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="include-steps" 
+                    checked={includeSteps} 
+                    onCheckedChange={(checked) => setIncludeSteps(checked === true)}
+                  />
+                  <Label htmlFor="include-steps">Detailed Test Steps</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="include-expected" 
+                    checked={includeExpected} 
+                    onCheckedChange={(checked) => setIncludeExpected(checked === true)}
+                  />
+                  <Label htmlFor="include-expected">Expected Results</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="include-preconditions" 
+                    checked={includePreconditions} 
+                    onCheckedChange={(checked) => setIncludePreconditions(checked === true)}
+                  />
+                  <Label htmlFor="include-preconditions">Preconditions</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="include-testdata" 
+                    checked={includeTestData} 
+                    onCheckedChange={(checked) => setIncludeTestData(checked === true)}
+                  />
+                  <Label htmlFor="include-testdata">Test Data</Label>
                 </div>
               </div>
-
-              <div>
-                <Label htmlFor="environment">Test Environment</Label>
-                <Input
-                  id="environment"
-                  placeholder="e.g., Chrome, Firefox, Mobile"
-                  value={environment}
-                  onChange={(e) => setEnvironment(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="test-data">Test Data Requirements</Label>
-                <Textarea
-                  id="test-data"
-                  placeholder="Specify any test data requirements..."
-                  className="min-h-20"
-                  value={testData}
-                  onChange={(e) => setTestData(e.target.value)}
-                />
-              </div>
             </div>
-          </div>
 
-          <div className="flex gap-4">
             <Button 
               onClick={generateTestCases} 
-              disabled={isGenerating}
-              className="flex-1"
+              disabled={isGenerating || !prompt.trim()}
+              className="w-full bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white"
             >
-              {isGenerating ? "Generating..." : "Generate Test Cases"}
-              <Wand2 className="ml-2 h-4 w-4" />
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Test Cases...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Generate Test Cases
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Generated Test Cases Preview */}
-      {generatedTestCases.length > 0 && (
-        <Card>
+      {generatedTests.length > 0 && (
+        <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-0">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Generated Test Cases ({generatedTestCases.length})
-              </span>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={exportTestCases}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
-                <Button size="sm" onClick={saveTestCasesToDatabase}>
-                  Save to Database
-                </Button>
-              </div>
-            </CardTitle>
+            <CardTitle className="text-gray-800">Generated Test Cases</CardTitle>
+            <CardDescription>Review and save the generated test cases</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2 mb-4">
+              <Button onClick={saveTestCases} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save to Database
+                  </>
+                )}
+              </Button>
+              <Button variant="outline" onClick={exportTestCases}>
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
+
             <div className="space-y-4">
-              {generatedTestCases.map((testCase, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">{testCase.title}</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    <strong>Description:</strong> {testCase.description}
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    <strong>Steps:</strong>
-                  </p>
-                  <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 mb-2">
-                    {testCase.steps.map((step, stepIndex) => (
-                      <li key={stepIndex}>{step}</li>
-                    ))}
-                  </ol>
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Expected Result:</strong> {testCase.expectedResult}
-                  </p>
-                </div>
+              {generatedTests.map((testCase, index) => (
+                <Card key={index} className="border border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-gray-800">{testCase.title}</h4>
+                        <div className="flex gap-2">
+                          <Badge variant="outline">{testCase.type}</Badge>
+                          <Badge variant="secondary">{testCase.priority}</Badge>
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-gray-600">{testCase.description}</p>
+                      
+                      {testCase.steps && testCase.steps.length > 0 && (
+                        <div>
+                          <h5 className="font-medium text-sm mb-2">Test Steps:</h5>
+                          <ol className="list-decimal list-inside text-sm text-gray-600 space-y-1">
+                            {testCase.steps.map((step: string, stepIndex: number) => (
+                              <li key={stepIndex}>{step}</li>
+                            ))}
+                          </ol>
+                        </div>
+                      )}
+                      
+                      {testCase.expected_result && (
+                        <div>
+                          <h5 className="font-medium text-sm mb-1">Expected Result:</h5>
+                          <p className="text-sm text-gray-600">{testCase.expected_result}</p>
+                        </div>
+                      )}
+                      
+                      {testCase.test_data && (
+                        <div>
+                          <h5 className="font-medium text-sm mb-1">Test Data:</h5>
+                          <p className="text-sm text-gray-600">{testCase.test_data}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </CardContent>

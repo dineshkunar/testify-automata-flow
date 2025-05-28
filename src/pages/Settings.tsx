@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Settings as SettingsIcon, Bell, Shield, Users, Database } from "lucide-react";
+import { Settings as SettingsIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { SettingsNotifications } from "@/components/SettingsNotifications";
+import { SettingsSecurity } from "@/components/SettingsSecurity";
+import { SettingsTeam } from "@/components/SettingsTeam";
+import { SettingsDataPrivacy } from "@/components/SettingsDataPrivacy";
 
 const Settings = () => {
   const [settings, setSettings] = useState({
@@ -19,13 +24,72 @@ const Settings = () => {
     autoSave: true,
     darkMode: false,
   });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSave = () => {
-    toast({
-      title: "Settings Saved",
-      description: "Your settings have been updated successfully.",
-    });
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('preferences')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.preferences?.general) {
+        setSettings({ ...settings, ...data.preferences.general });
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('preferences')
+        .eq('id', user.id)
+        .single();
+
+      const updatedPreferences = {
+        ...currentProfile?.preferences,
+        general: settings
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ preferences: updatedPreferences })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Settings Saved",
+        description: "Your settings have been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -143,257 +207,29 @@ const Settings = () => {
 
                 <Button 
                   onClick={handleSave}
-                  className="bg-gradient-to-r from-pink-600 to-pink-800 hover:from-pink-700 hover:to-pink-900 text-white"
+                  disabled={loading}
+                  className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white"
                 >
-                  Save Changes
+                  {loading ? "Saving..." : "Save Changes"}
                 </Button>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notification Preferences
-                </CardTitle>
-                <CardDescription>Choose what notifications you want to receive</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Test execution completed</Label>
-                      <p className="text-sm text-muted-foreground">Get notified when test runs finish</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Test failures</Label>
-                      <p className="text-sm text-muted-foreground">Immediate alerts for failed tests</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>New team member added</Label>
-                      <p className="text-sm text-muted-foreground">When someone joins your team</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Weekly reports</Label>
-                      <p className="text-sm text-muted-foreground">Summary of your testing activity</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Integration updates</Label>
-                      <p className="text-sm text-muted-foreground">When integrations sync or fail</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <h4 className="font-medium">Notification Channels</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label>Email notifications</Label>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>Slack notifications</Label>
-                      <Switch />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>SMS notifications</Label>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
-
-                <Button>Save Preferences</Button>
-              </CardContent>
-            </Card>
+          <TabsContent value="notifications">
+            <SettingsNotifications />
           </TabsContent>
 
-          <TabsContent value="security" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Security Settings
-                </CardTitle>
-                <CardDescription>Manage your account security and access controls</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input id="current-password" type="password" />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input id="new-password" type="password" />
-                  </div>
-                  <div>
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
-                    <Input id="confirm-password" type="password" />
-                  </div>
-                  <Button>Update Password</Button>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <h4 className="font-medium">Two-Factor Authentication</h4>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Enable 2FA</Label>
-                      <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <h4 className="font-medium">Session Management</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">Current Session</p>
-                        <p className="text-sm text-muted-foreground">Chrome on MacOS - Active now</p>
-                      </div>
-                      <Button variant="outline" size="sm">Current</Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">Mobile Session</p>
-                        <p className="text-sm text-muted-foreground">Safari on iOS - 2 hours ago</p>
-                      </div>
-                      <Button variant="outline" size="sm">Revoke</Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="security">
+            <SettingsSecurity />
           </TabsContent>
 
-          <TabsContent value="team" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Team Management
-                </CardTitle>
-                <CardDescription>Manage team members and their permissions</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex gap-4">
-                  <Input placeholder="Enter email address" className="flex-1" />
-                  <Select defaultValue="viewer">
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="qa-lead">QA Lead</SelectItem>
-                      <SelectItem value="developer">Developer</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button>Invite</Button>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Team Members</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                          JD
-                        </div>
-                        <div>
-                          <p className="font-medium">John Doe</p>
-                          <p className="text-sm text-muted-foreground">john@acme.com</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Admin</Badge>
-                        <Button variant="outline" size="sm">Edit</Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                          JS
-                        </div>
-                        <div>
-                          <p className="font-medium">Jane Smith</p>
-                          <p className="text-sm text-muted-foreground">jane@acme.com</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">QA Lead</Badge>
-                        <Button variant="outline" size="sm">Edit</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="team">
+            <SettingsTeam />
           </TabsContent>
 
-          <TabsContent value="data" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Data & Privacy
-                </CardTitle>
-                <CardDescription>Manage your data and privacy settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Analytics tracking</Label>
-                      <p className="text-sm text-muted-foreground">Help us improve by sharing usage data</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Marketing communications</Label>
-                      <p className="text-sm text-muted-foreground">Receive product updates and news</p>
-                    </div>
-                    <Switch />
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <h4 className="font-medium">Data Export</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Download a copy of your data including test cases, reports, and settings.
-                  </p>
-                  <Button variant="outline">Request Data Export</Button>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <h4 className="font-medium text-red-600">Danger Zone</h4>
-                  <p className="text-sm text-muted-foreground">
-                    These actions cannot be undone. Please proceed with caution.
-                  </p>
-                  <div className="flex gap-4">
-                    <Button variant="outline">Delete All Test Data</Button>
-                    <Button variant="destructive">Delete Account</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="data">
+            <SettingsDataPrivacy />
           </TabsContent>
         </Tabs>
       </div>
