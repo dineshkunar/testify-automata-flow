@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, BarChart3 } from "lucide-react";
+import { CalendarIcon, BarChart3, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -179,7 +179,7 @@ const GenerateReport = () => {
                   <Checkbox
                     id="include-charts"
                     checked={includeCharts}
-                    onCheckedChange={setIncludeCharts}
+                    onCheckedChange={(checked) => setIncludeCharts(checked === true)}
                   />
                   <label htmlFor="include-charts" className="text-sm font-medium">
                     Include charts and graphs
@@ -189,7 +189,7 @@ const GenerateReport = () => {
                   <Checkbox
                     id="include-details"
                     checked={includeDetails}
-                    onCheckedChange={setIncludeDetails}
+                    onCheckedChange={(checked) => setIncludeDetails(checked === true)}
                   />
                   <label htmlFor="include-details" className="text-sm font-medium">
                     Include detailed test case information
