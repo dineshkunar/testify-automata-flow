@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { TestTube2, Plus, Filter } from "lucide-react";
 import { TestCaseGenerator } from "@/components/TestCaseGenerator";
-import { TestCaseKanban } from "@/components/TestCaseKanban";
+import { DraggableTestCaseKanban } from "@/components/DraggableTestCaseKanban";
 import { TestCaseForm } from "@/components/TestCaseForm";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -101,7 +101,7 @@ const TestCases = () => {
                   Filter
                 </Button>
               </div>
-              <TestCaseKanban />
+              <DraggableTestCaseKanban />
             </TabsContent>
 
             <TabsContent value="generator">
