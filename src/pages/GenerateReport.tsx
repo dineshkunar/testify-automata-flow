@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Download, FileText, BarChart3 } from "lucide-react";
+import { CalendarIcon, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { ReportsList } from "@/components/ReportsList";
 
 const GenerateReport = () => {
   const [reportName, setReportName] = useState("");
@@ -22,9 +22,10 @@ const GenerateReport = () => {
   const [includeCharts, setIncludeCharts] = useState(true);
   const [includeDetails, setIncludeDetails] = useState(true);
   const [description, setDescription] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     if (!reportName || !reportType || !dateFrom || !dateTo) {
       toast({
         title: "Missing Information",
@@ -34,10 +35,32 @@ const GenerateReport = () => {
       return;
     }
 
-    toast({
-      title: "Report Generated",
-      description: `${reportName} has been generated successfully.`,
-    });
+    setIsGenerating(true);
+    
+    try {
+      // Simulate report generation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast({
+        title: "Report Generated",
+        description: `${reportName} has been generated successfully.`,
+      });
+      
+      // Reset form
+      setReportName("");
+      setReportType("");
+      setDateFrom(undefined);
+      setDateTo(undefined);
+      setDescription("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -189,10 +212,11 @@ const GenerateReport = () => {
             <div className="flex gap-4 pt-4">
               <Button
                 onClick={handleGenerateReport}
+                disabled={isGenerating}
                 className="bg-gradient-to-r from-pink-600 to-pink-800 hover:from-pink-700 hover:to-pink-900 text-white"
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Generate Report
+                {isGenerating ? "Generating..." : "Generate Report"}
               </Button>
               <Button
                 variant="outline"
@@ -207,6 +231,16 @@ const GenerateReport = () => {
                 Reset Form
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/90 backdrop-blur-sm shadow-xl border-0 max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-gray-800">Recent Reports</CardTitle>
+            <CardDescription className="text-gray-600">View and manage your generated reports</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ReportsList />
           </CardContent>
         </Card>
       </div>
