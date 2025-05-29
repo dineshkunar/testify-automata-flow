@@ -95,6 +95,7 @@ export type Database = {
           preferences: Json | null
           role: string
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -106,6 +107,7 @@ export type Database = {
           preferences?: Json | null
           role?: string
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -117,6 +119,7 @@ export type Database = {
           preferences?: Json | null
           role?: string
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -228,15 +231,57 @@ export type Database = {
         }
         Relationships: []
       }
+      user_credentials: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      authenticate_user: {
+        Args: { p_username: string; p_password: string }
+        Returns: {
+          user_id: string
+          username: string
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      register_user: {
+        Args: {
+          p_username: string
+          p_password: string
+          p_role?: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "tester"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -351,6 +396,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "tester"],
+    },
   },
 } as const
