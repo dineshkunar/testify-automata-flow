@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, CheckCircle, XCircle, Sync } from "lucide-react";
+import { CheckCircle, XCircle, Sync, Play } from "lucide-react";
 import { useDataFlow } from "@/hooks/useDataFlow";
 import { useState } from "react";
 
@@ -20,9 +20,14 @@ export const TestCaseActions = ({ testCase, onStatusChange }: TestCaseActionsPro
 
   const handleExecute = async (status: 'passed' | 'failed') => {
     setExecuting(true);
-    await executeTestCase(testCase.id, status);
-    setExecuting(false);
-    onStatusChange?.();
+    try {
+      await executeTestCase(testCase.id, status);
+      onStatusChange?.();
+    } catch (error) {
+      console.error('Failed to execute test case:', error);
+    } finally {
+      setExecuting(false);
+    }
   };
 
   const handleSync = async () => {
@@ -31,10 +36,25 @@ export const TestCaseActions = ({ testCase, onStatusChange }: TestCaseActionsPro
     await syncWithIntegration(integrationId);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'done':
+        return 'default';
+      case 'in_progress':
+        return 'secondary';
+      case 'testing':
+        return 'outline';
+      case 'todo':
+        return 'secondary';
+      default:
+        return 'secondary';
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
-      <Badge variant={testCase.status === 'done' ? 'default' : 'secondary'}>
-        {testCase.status}
+      <Badge variant={getStatusColor(testCase.status) as any}>
+        {testCase.status.replace('_', ' ')}
       </Badge>
       
       <div className="flex gap-1">
@@ -43,7 +63,8 @@ export const TestCaseActions = ({ testCase, onStatusChange }: TestCaseActionsPro
           variant="outline"
           onClick={() => handleExecute('passed')}
           disabled={executing || loading}
-          className="text-green-600 hover:text-green-700"
+          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+          title="Mark as Passed"
         >
           <CheckCircle className="h-4 w-4" />
         </Button>
@@ -53,7 +74,8 @@ export const TestCaseActions = ({ testCase, onStatusChange }: TestCaseActionsPro
           variant="outline"
           onClick={() => handleExecute('failed')}
           disabled={executing || loading}
-          className="text-red-600 hover:text-red-700"
+          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          title="Mark as Failed"
         >
           <XCircle className="h-4 w-4" />
         </Button>
@@ -63,11 +85,16 @@ export const TestCaseActions = ({ testCase, onStatusChange }: TestCaseActionsPro
           variant="outline"
           onClick={handleSync}
           disabled={loading}
-          className="text-blue-600 hover:text-blue-700"
+          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          title="Sync with Integration"
         >
           <Sync className="h-4 w-4" />
         </Button>
       </div>
+      
+      {executing && (
+        <span className="text-xs text-muted-foreground">Executing...</span>
+      )}
     </div>
   );
 };

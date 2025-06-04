@@ -1,217 +1,311 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 export interface TestExecution {
-  id: string;
+  id?: string;
   test_case_id: string;
+  executed_by?: string;
   status: 'passed' | 'failed' | 'skipped';
-  executed_at: string;
-  execution_time: number;
+  execution_time?: number;
   error_message?: string;
+  executed_at?: string;
+  environment?: string;
+  browser?: string;
+  screenshots?: any[];
 }
 
 export interface IntegrationSync {
+  id?: string;
   integration_id: string;
-  last_sync: string;
-  sync_status: 'success' | 'failed' | 'in_progress';
-  synced_items: number;
+  sync_status: 'pending' | 'in_progress' | 'success' | 'failed';
+  synced_items?: number;
+  error_message?: string;
+  started_at?: string;
+  completed_at?: string;
+  sync_data?: any;
+}
+
+export interface DashboardMetrics {
+  totalTestCases: number;
+  passedTests: number;
+  failedTests: number;
+  pendingTests: number;
+  totalExecutions: number;
+  avgExecutionTime: number;
+  recentActivity: any[];
+  activeIntegrations: number;
+  passRate: number;
+  testCasesByType: Record<string, number>;
+  testCasesByStatus: Record<string, number>;
+  executionTrend: Array<{ date: string; executions: number }>;
 }
 
 class DataFlowService {
-  // Test Cases to Reports data flow
-  async recordTestExecution(execution: Omit<TestExecution, 'id'>) {
-    const { data, error } = await supabase
-      .from('test_executions')
-      .insert(execution)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    // Update test case status
-    await supabase
-      .from('test_cases')
-      .update({ 
-        status: execution.status === 'passed' ? 'done' : 'failed',
-        actual_result: execution.error_message || 'Test executed successfully'
-      })
-      .eq('id', execution.test_case_id);
-
-    return data;
-  }
-
-  // Get test metrics for reports
-  async getTestMetrics(dateFrom: string, dateTo: string) {
-    const { data: executions, error } = await supabase
-      .from('test_executions')
-      .select(`
-        *,
-        test_cases (
-          title,
-          type,
-          priority
-        )
-      `)
-      .gte('executed_at', dateFrom)
-      .lte('executed_at', dateTo);
-
-    if (error) throw error;
-
-    // Calculate metrics
-    const totalTests = executions?.length || 0;
-    const passedTests = executions?.filter(e => e.status === 'passed').length || 0;
-    const failedTests = executions?.filter(e => e.status === 'failed').length || 0;
-    const avgExecutionTime = executions?.reduce((acc, e) => acc + (e.execution_time || 0), 0) / totalTests || 0;
-
-    return {
-      totalTests,
-      passedTests,
-      failedTests,
-      passRate: totalTests > 0 ? (passedTests / totalTests) * 100 : 0,
-      avgExecutionTime: Math.round(avgExecutionTime * 100) / 100,
-      executions
-    };
-  }
-
-  // Integration sync with external tools
-  async syncWithIntegration(integrationId: string, testCases: any[]) {
+  // Get real dashboard metrics from database
+  async getDashboardMetrics(): Promise<DashboardMetrics> {
     try {
-      const { data: integration, error } = await supabase
+      // Get metrics from database function
+      const { data: metricsData, error: metricsError } = await supabase
+        .rpc('get_dashboard_metrics');
+
+      if (metricsError) throw metricsError;
+
+      const metrics = metricsData?.[0] || {};
+
+      // Get additional metrics
+      const { data: testCases } = await supabase
+        .from('test_cases')
+        .select('type, status');
+
+      const { data: integrations } = await supabase
         .from('integrations')
-        .select('*')
-        .eq('id', integrationId)
-        .single();
+        .select('status')
+        .eq('status', 'active');
 
-      if (error) throw error;
+      // Calculate derived metrics
+      const testCasesByType = testCases?.reduce((acc: Record<string, number>, tc) => {
+        acc[tc.type] = (acc[tc.type] || 0) + 1;
+        return acc;
+      }, {}) || {};
 
-      // Record sync attempt
-      await supabase
-        .from('integration_syncs')
-        .insert({
-          integration_id: integrationId,
-          sync_status: 'in_progress',
-          started_at: new Date().toISOString()
-        });
+      const testCasesByStatus = testCases?.reduce((acc: Record<string, number>, tc) => {
+        acc[tc.status] = (acc[tc.status] || 0) + 1;
+        return acc;
+      }, {}) || {};
 
-      // Simulate integration sync based on provider
-      const syncResult = await this.performIntegrationSync(integration, testCases);
+      // Get execution trend for last 7 days
+      const { data: executionTrend } = await supabase
+        .from('test_executions')
+        .select('executed_at')
+        .gte('executed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
-      // Update sync status
-      await supabase
-        .from('integration_syncs')
-        .update({
-          sync_status: syncResult.success ? 'success' : 'failed',
-          synced_items: syncResult.syncedCount,
-          completed_at: new Date().toISOString(),
-          error_message: syncResult.error
-        })
-        .eq('integration_id', integrationId);
+      const trendData = this.calculateExecutionTrend(executionTrend || []);
 
-      return syncResult;
+      const totalTests = metrics.passed_tests + metrics.failed_tests;
+      const passRate = totalTests > 0 ? (metrics.passed_tests / totalTests) * 100 : 0;
+
+      return {
+        totalTestCases: Number(metrics.total_test_cases) || 0,
+        passedTests: Number(metrics.passed_tests) || 0,
+        failedTests: Number(metrics.failed_tests) || 0,
+        pendingTests: Number(metrics.pending_tests) || 0,
+        totalExecutions: Number(metrics.total_executions) || 0,
+        avgExecutionTime: Number(metrics.avg_execution_time) || 0,
+        recentActivity: metrics.recent_activity || [],
+        activeIntegrations: integrations?.length || 0,
+        passRate,
+        testCasesByType,
+        testCasesByStatus,
+        executionTrend: trendData
+      };
     } catch (error) {
-      console.error('Integration sync failed:', error);
+      console.error('Error getting dashboard metrics:', error);
       throw error;
     }
   }
 
-  private async performIntegrationSync(integration: any, testCases: any[]) {
-    // Mock implementation - in real app, this would call actual APIs
-    const { provider, configuration } = integration;
-    
-    switch (provider) {
-      case 'jira':
-        return await this.syncWithJira(configuration, testCases);
-      case 'trello':
-        return await this.syncWithTrello(configuration, testCases);
-      case 'slack':
-        return await this.syncWithSlack(configuration, testCases);
-      default:
-        return { success: false, syncedCount: 0, error: 'Unsupported provider' };
+  // Record test execution
+  async recordTestExecution(execution: TestExecution): Promise<any> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('test_executions')
+        .insert([{
+          ...execution,
+          executed_by: user.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Create notification for test execution
+      await this.createNotification({
+        title: 'Test Execution Complete',
+        message: `Test case execution ${execution.status}`,
+        type: execution.status === 'passed' ? 'success' : 'error'
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error recording test execution:', error);
+      throw error;
     }
   }
 
-  private async syncWithJira(config: any, testCases: any[]) {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock sync - would create/update JIRA issues
-    const syncedCount = Math.min(testCases.length, 10);
-    return { 
-      success: true, 
-      syncedCount,
-      message: `Synced ${syncedCount} test cases to JIRA project ${config.project_key}`
-    };
+  // Sync with integration
+  async syncWithIntegration(integrationId: string, testCases: any[] = []): Promise<any> {
+    try {
+      // Create sync record
+      const { data: syncRecord, error: syncError } = await supabase
+        .from('integration_syncs')
+        .insert([{
+          integration_id: integrationId,
+          sync_status: 'in_progress',
+          synced_items: 0
+        }])
+        .select()
+        .single();
+
+      if (syncError) throw syncError;
+
+      // Simulate sync process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Update sync status
+      const syncedCount = Math.min(testCases.length, 20);
+      const { error: updateError } = await supabase
+        .from('integration_syncs')
+        .update({
+          sync_status: 'success',
+          synced_items: syncedCount,
+          completed_at: new Date().toISOString(),
+          sync_data: { syncedTestCases: testCases.slice(0, syncedCount) }
+        })
+        .eq('id', syncRecord.id);
+
+      if (updateError) throw updateError;
+
+      // Create notification
+      await this.createNotification({
+        title: 'Integration Sync Complete',
+        message: `Successfully synced ${syncedCount} test cases`,
+        type: 'success'
+      });
+
+      return {
+        syncedCount,
+        message: `Successfully synced ${syncedCount} test cases`
+      };
+    } catch (error) {
+      console.error('Sync failed:', error);
+      
+      // Update sync status to failed if we have a sync record
+      // Note: In a real implementation, you'd want to track the sync ID properly
+      
+      throw error;
+    }
   }
 
-  private async syncWithTrello(config: any, testCases: any[]) {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const syncedCount = Math.min(testCases.length, 8);
-    return { 
-      success: true, 
-      syncedCount,
-      message: `Created ${syncedCount} cards in Trello board`
-    };
+  // Get test metrics for reporting
+  async getTestMetrics(dateFrom: string, dateTo: string): Promise<any> {
+    try {
+      const { data: executions, error } = await supabase
+        .from('test_executions')
+        .select(`
+          *,
+          test_cases (
+            title,
+            type,
+            priority
+          )
+        `)
+        .gte('executed_at', dateFrom)
+        .lte('executed_at', dateTo);
+
+      if (error) throw error;
+
+      const totalTests = executions?.length || 0;
+      const passedTests = executions?.filter(e => e.status === 'passed').length || 0;
+      const failedTests = executions?.filter(e => e.status === 'failed').length || 0;
+      const avgExecutionTime = executions?.reduce((sum, e) => sum + (e.execution_time || 0), 0) / Math.max(totalTests, 1);
+
+      return {
+        totalTests,
+        passedTests,
+        failedTests,
+        passRate: totalTests > 0 ? (passedTests / totalTests) * 100 : 0,
+        avgExecutionTime,
+        executions: executions || []
+      };
+    } catch (error) {
+      console.error('Error getting test metrics:', error);
+      throw error;
+    }
   }
 
-  private async syncWithSlack(config: any, testCases: any[]) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    return { 
-      success: true, 
-      syncedCount: 1,
-      message: `Sent test summary to ${config.channel}`
-    };
+  // Create notification
+  async createNotification(notification: {
+    title: string;
+    message: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+    action_url?: string;
+  }): Promise<any> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert([{
+          ...notification,
+          user_id: user.id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      // Don't throw here, notifications are not critical
+    }
   }
 
-  // Dashboard data aggregation
-  async getDashboardMetrics() {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  // Get notifications for user
+  async getNotifications(limit: number = 10): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
-    const [testCasesData, executionsData, integrationsData] = await Promise.all([
-      supabase.from('test_cases').select('*'),
-      supabase.from('test_executions').select('*').gte('executed_at', thirtyDaysAgo.toISOString()),
-      supabase.from('integrations').select('*')
-    ]);
-
-    const testCases = testCasesData.data || [];
-    const executions = executionsData.data || [];
-    const integrations = integrationsData.data || [];
-
-    return {
-      totalTestCases: testCases.length,
-      activeIntegrations: integrations.filter(i => i.status === 'active').length,
-      recentExecutions: executions.length,
-      passRate: executions.length > 0 
-        ? (executions.filter(e => e.status === 'passed').length / executions.length) * 100 
-        : 0,
-      testCasesByType: this.groupBy(testCases, 'type'),
-      testCasesByStatus: this.groupBy(testCases, 'status'),
-      executionTrend: this.getExecutionTrend(executions)
-    };
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting notifications:', error);
+      return [];
+    }
   }
 
-  private groupBy(array: any[], key: string) {
-    return array.reduce((result, item) => {
-      const group = item[key] || 'unknown';
-      result[group] = (result[group] || 0) + 1;
-      return result;
-    }, {});
+  // Mark notification as read
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   }
 
-  private getExecutionTrend(executions: any[]) {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
+  // Calculate execution trend for chart
+  private calculateExecutionTrend(executions: any[]): Array<{ date: string; executions: number }> {
+    const today = new Date();
+    const trend = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
       date.setDate(date.getDate() - i);
-      return date.toISOString().split('T')[0];
-    }).reverse();
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const executionsOnDate = executions.filter(e => 
+        e.executed_at.startsWith(dateStr)
+      ).length;
 
-    return last7Days.map(date => ({
-      date,
-      executions: executions.filter(e => e.executed_at.startsWith(date)).length
-    }));
+      trend.push({
+        date: dateStr,
+        executions: executionsOnDate
+      });
+    }
+
+    return trend;
   }
 }
 

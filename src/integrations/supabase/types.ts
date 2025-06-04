@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      integration_syncs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          integration_id: string
+          started_at: string
+          sync_data: Json | null
+          sync_status: string
+          synced_items: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          integration_id: string
+          started_at?: string
+          sync_data?: Json | null
+          sync_status?: string
+          synced_items?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          integration_id?: string
+          started_at?: string
+          sync_data?: Json | null
+          sync_status?: string
+          synced_items?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_syncs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           api_key_encrypted: string | null
@@ -81,6 +122,39 @@ export type Database = {
           tool_name?: string
           user_id?: string
           version?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          id: string
+          message: string
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -231,6 +305,53 @@ export type Database = {
         }
         Relationships: []
       }
+      test_executions: {
+        Row: {
+          browser: string | null
+          environment: string | null
+          error_message: string | null
+          executed_at: string
+          executed_by: string
+          execution_time: number | null
+          id: string
+          screenshots: Json | null
+          status: string
+          test_case_id: string
+        }
+        Insert: {
+          browser?: string | null
+          environment?: string | null
+          error_message?: string | null
+          executed_at?: string
+          executed_by: string
+          execution_time?: number | null
+          id?: string
+          screenshots?: Json | null
+          status: string
+          test_case_id: string
+        }
+        Update: {
+          browser?: string | null
+          environment?: string | null
+          error_message?: string | null
+          executed_at?: string
+          executed_by?: string
+          execution_time?: number | null
+          id?: string
+          screenshots?: Json | null
+          status?: string
+          test_case_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_executions_test_case_id_fkey"
+            columns: ["test_case_id"]
+            isOneToOne: false
+            referencedRelation: "test_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_credentials: {
         Row: {
           created_at: string
@@ -269,6 +390,18 @@ export type Database = {
           user_id: string
           username: string
           role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      get_dashboard_metrics: {
+        Args: { user_uuid?: string }
+        Returns: {
+          total_test_cases: number
+          passed_tests: number
+          failed_tests: number
+          pending_tests: number
+          total_executions: number
+          avg_execution_time: number
+          recent_activity: Json
         }[]
       }
       register_user: {

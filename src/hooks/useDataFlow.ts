@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const useDataFlow = () => {
   const [loading, setLoading] = useState(false);
   const [dashboardMetrics, setDashboardMetrics] = useState<any>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const { toast } = useToast();
 
   // Load dashboard metrics
@@ -27,6 +28,16 @@ export const useDataFlow = () => {
     }
   };
 
+  // Load notifications
+  const loadNotifications = async () => {
+    try {
+      const notifs = await dataFlowService.getNotifications();
+      setNotifications(notifs);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  };
+
   // Execute test case
   const executeTestCase = async (testCaseId: string, status: 'passed' | 'failed', errorMessage?: string) => {
     try {
@@ -34,9 +45,10 @@ export const useDataFlow = () => {
       await dataFlowService.recordTestExecution({
         test_case_id: testCaseId,
         status,
-        executed_at: new Date().toISOString(),
         execution_time: Math.random() * 5 + 1, // Mock execution time
-        error_message: errorMessage
+        error_message: errorMessage,
+        environment: 'test',
+        browser: 'chrome'
       });
 
       toast({
@@ -44,8 +56,8 @@ export const useDataFlow = () => {
         description: `Test case ${status} successfully`,
       });
 
-      // Refresh metrics
-      await loadDashboardMetrics();
+      // Refresh metrics and notifications
+      await Promise.all([loadDashboardMetrics(), loadNotifications()]);
     } catch (error) {
       console.error('Failed to execute test:', error);
       toast({
@@ -76,6 +88,9 @@ export const useDataFlow = () => {
         description: result.message || `Synced ${result.syncedCount} items`,
       });
 
+      // Refresh notifications
+      await loadNotifications();
+
       return result;
     } catch (error) {
       console.error('Sync failed:', error);
@@ -104,7 +119,7 @@ export const useDataFlow = () => {
           date_from: dateFrom,
           date_to: dateTo,
           status: 'completed',
-          description: `Generated report with ${metrics.totalTests} test cases`
+          description: `Generated report with ${metrics.totalTests} test executions`
         })
         .select()
         .single();
@@ -115,6 +130,15 @@ export const useDataFlow = () => {
         title: "Report Generated",
         description: `${type} report created successfully`,
       });
+
+      // Create notification
+      await dataFlowService.createNotification({
+        title: 'Report Generated',
+        message: `${type} report has been generated successfully`,
+        type: 'success'
+      });
+
+      await loadNotifications();
 
       return { report, metrics };
     } catch (error) {
@@ -129,16 +153,72 @@ export const useDataFlow = () => {
     }
   };
 
+  // Mark notification as read
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      await dataFlowService.markNotificationAsRead(notificationId);
+      await loadNotifications();
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  // Set up real-time subscriptions
   useEffect(() => {
+    const setupRealtimeSubscriptions = () => {
+      // Subscribe to test executions
+      const executionsChannel = supabase
+        .channel('test_executions_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'test_executions'
+          },
+          () => {
+            loadDashboardMetrics();
+          }
+        )
+        .subscribe();
+
+      // Subscribe to notifications
+      const notificationsChannel = supabase
+        .channel('notifications_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications'
+          },
+          () => {
+            loadNotifications();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(executionsChannel);
+        supabase.removeChannel(notificationsChannel);
+      };
+    };
+
+    const cleanup = setupRealtimeSubscriptions();
     loadDashboardMetrics();
+    loadNotifications();
+
+    return cleanup;
   }, []);
 
   return {
     loading,
     dashboardMetrics,
+    notifications,
     executeTestCase,
     syncWithIntegration,
     generateReport,
-    loadDashboardMetrics
+    loadDashboardMetrics,
+    markNotificationAsRead
   };
 };
