@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Sync, Play } from "lucide-react";
+import { CheckCircle, XCircle, upload, Play } from "lucide-react";
 import { useDataFlow } from "@/hooks/useDataFlow";
 import { useState } from "react";
 
@@ -88,7 +88,7 @@ export const TestCaseActions = ({ testCase, onStatusChange }: TestCaseActionsPro
           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
           title="Sync with Integration"
         >
-          <Sync className="h-4 w-4" />
+          <upload className="h-4 w-4" />
         </Button>
       </div>
       
