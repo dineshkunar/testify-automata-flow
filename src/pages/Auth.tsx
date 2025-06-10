@@ -111,7 +111,7 @@ const Auth = () => {
                 
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</p>
-                  <p className="text-xs text-gray-600">Admin: dineshk / India@123</p>
+                  <p className="text-xs text-gray-600">Admin: dineshk / India123</p>
                   <p className="text-xs text-gray-600">Or create a new tester account</p>
                 </div>
               </form>
