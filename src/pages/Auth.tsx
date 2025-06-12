@@ -65,7 +65,7 @@ const Auth = () => {
     } else {
       toast({
         title: 'Account Created!',
-        description: 'Please check your email to verify your account.',
+        description: 'Your account has been created successfully. You can now sign in.',
       });
     }
 
@@ -143,7 +143,7 @@ const Auth = () => {
               <CardHeader>
                 <CardTitle>Create Account</CardTitle>
                 <CardDescription>
-                  Sign up for a new TestFlow Pro account
+                  Sign up for a new TestFlow Pro account - no email confirmation required
                 </CardDescription>
               </CardHeader>
               <CardContent>

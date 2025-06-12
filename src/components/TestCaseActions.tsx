@@ -1,100 +1,114 @@
-
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, upload, Play } from "lucide-react";
-import { useDataFlow } from "@/hooks/useDataFlow";
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Upload, Download, Share2, Copy, Trash2, Edit, Play, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface TestCaseActionsProps {
-  testCase: {
-    id: string;
-    title: string;
-    status: string;
-  };
-  onStatusChange?: () => void;
+  testCaseId: string;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onRun?: (id: string) => void;
+  onClone?: (id: string) => void;
+  onExport?: (id: string) => void;
+  onImport?: () => void;
 }
 
-export const TestCaseActions = ({ testCase, onStatusChange }: TestCaseActionsProps) => {
-  const { executeTestCase, syncWithIntegration, loading } = useDataFlow();
-  const [executing, setExecuting] = useState(false);
+export const TestCaseActions: React.FC<TestCaseActionsProps> = ({
+  testCaseId,
+  onEdit,
+  onDelete,
+  onRun,
+  onClone,
+  onExport,
+  onImport,
+}) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const handleExecute = async (status: 'passed' | 'failed') => {
-    setExecuting(true);
-    try {
-      await executeTestCase(testCase.id, status);
-      onStatusChange?.();
-    } catch (error) {
-      console.error('Failed to execute test case:', error);
-    } finally {
-      setExecuting(false);
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(testCaseId);
+    } else {
+      toast({
+        title: 'Edit Action',
+        description: 'Edit action triggered for test case: ' + testCaseId,
+      });
     }
   };
 
-  const handleSync = async () => {
-    // In a real app, you'd get the user's preferred integration
-    const integrationId = 'default-integration-id';
-    await syncWithIntegration(integrationId);
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(testCaseId);
+    } else {
+      toast({
+        title: 'Delete Action',
+        description: 'Delete action triggered for test case: ' + testCaseId,
+      });
+    }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'done':
-        return 'default';
-      case 'in_progress':
-        return 'secondary';
-      case 'testing':
-        return 'outline';
-      case 'todo':
-        return 'secondary';
-      default:
-        return 'secondary';
+  const handleRun = () => {
+    if (onRun) {
+      onRun(testCaseId);
+    } else {
+      toast({
+        title: 'Run Action',
+        description: 'Run action triggered for test case: ' + testCaseId,
+      });
+    }
+  };
+
+  const handleClone = () => {
+    if (onClone) {
+      onClone(testCaseId);
+    } else {
+      toast({
+        title: 'Clone Action',
+        description: 'Clone action triggered for test case: ' + testCaseId,
+      });
+    }
+  };
+
+  const handleExport = () => {
+    if (onExport) {
+      onExport(testCaseId);
+    } else {
+      toast({
+        title: 'Export Action',
+        description: 'Export action triggered for test case: ' + testCaseId,
+      });
+    }
+  };
+
+  const handleImport = () => {
+    if (onImport) {
+      onImport();
+    } else {
+      toast({
+        title: 'Import Action',
+        description: 'Import action triggered.',
+      });
     }
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Badge variant={getStatusColor(testCase.status) as any}>
-        {testCase.status.replace('_', ' ')}
-      </Badge>
-      
-      <div className="flex gap-1">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => handleExecute('passed')}
-          disabled={executing || loading}
-          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-          title="Mark as Passed"
-        >
-          <CheckCircle className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => handleExecute('failed')}
-          disabled={executing || loading}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          title="Mark as Failed"
-        >
-          <XCircle className="h-4 w-4" />
-        </Button>
-        
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleSync}
-          disabled={loading}
-          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-          title="Sync with Integration"
-        >
-          <upload className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      {executing && (
-        <span className="text-xs text-muted-foreground">Executing...</span>
-      )}
+    <div className="flex items-center space-x-2">
+      <Button variant="outline" size="icon" onClick={handleEdit}>
+        <Edit className="h-4 w-4" />
+      </Button>
+      <Button variant="outline" size="icon" onClick={handleClone}>
+        <Copy className="h-4 w-4" />
+      </Button>
+      <Button variant="outline" size="icon" onClick={handleRun}>
+        <Play className="h-4 w-4" />
+      </Button>
+      <Button variant="outline" size="icon" onClick={handleExport}>
+        <Download className="h-4 w-4" />
+      </Button>
+      <Button variant="destructive" size="icon" onClick={handleDelete}>
+        <Trash2 className="h-4 w-4" />
+      </Button>
     </div>
   );
 };

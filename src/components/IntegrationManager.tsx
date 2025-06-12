@@ -1,306 +1,210 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, upload, Settings, Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useDataFlow } from "@/hooks/useDataFlow";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Upload, Settings, Trash2, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Integration {
   id: string;
   name: string;
-  type: string;
-  provider: string;
-  status: string;
-  configuration: any;
+  description: string;
+  category: string;
+  logo_url: string;
+  configuration_schema: any; // JSON schema for configuration
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-export const IntegrationManager = () => {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    provider: "",
-    api_key: "",
-    webhook_url: ""
-  });
+interface IntegrationConfiguration {
+  id: string;
+  integration_id: string;
+  configuration_data: any; // JSON object matching the schema
+  is_valid: boolean;
+  last_sync_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface IntegrationManagerProps {
+  integration: Integration;
+  onClose: () => void;
+  onSave: () => void;
+}
+
+const IntegrationManager: React.FC<IntegrationManagerProps> = ({ integration, onClose, onSave }) => {
   const { toast } = useToast();
-  const { syncWithIntegration, loading: syncLoading } = useDataFlow();
+  const [configData, setConfigData] = useState<any>({});
+  const [isConfigValid, setIsConfigValid] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    fetchIntegrations();
-  }, []);
+    // Load existing configuration if available
+    const fetchConfiguration = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('integration_configurations')
+          .select('*')
+          .eq('integration_id', integration.id)
+          .single();
 
-  const fetchIntegrations = async () => {
+        if (error) {
+          console.error('Error fetching integration configuration:', error);
+          // Optionally show a toast message here if the error is user-facing
+        }
+
+        if (data) {
+          setConfigData(data.configuration_data);
+          setIsConfigValid(data.is_valid);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConfiguration();
+  }, [integration.id]);
+
+  const handleInputChange = (key: string, value: any) => {
+    setConfigData({ ...configData, [key]: value });
+    // You might want to add validation logic here based on the schema
+    // For simplicity, we'll assume the config is valid on any change
+    setIsConfigValid(true);
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Check if a configuration already exists
+      const { data: existingConfig, error: existingConfigError } = await supabase
+        .from('integration_configurations')
+        .select('id')
+        .eq('integration_id', integration.id)
+        .single();
 
-      const { data, error } = await supabase
-        .from('integrations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      if (existingConfigError && existingConfigError.code !== 'PGRST116') {
+        console.error('Error checking existing configuration:', existingConfigError);
+        toast({
+          title: 'Error',
+          description: 'Failed to save integration configuration.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
-      if (error) throw error;
-      setIntegrations(data || []);
-    } catch (error) {
-      console.error('Error fetching integrations:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch integrations",
-        variant: "destructive",
-      });
+      if (existingConfig) {
+        // Update existing configuration
+        const { error } = await supabase
+          .from('integration_configurations')
+          .update({ configuration_data: configData, is_valid: isConfigValid })
+          .eq('integration_id', integration.id);
+
+        if (error) {
+          console.error('Error updating integration configuration:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to update integration configuration.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Success',
+            description: 'Integration configuration updated successfully.',
+          });
+          onSave(); // Notify parent component to refresh data
+        }
+      } else {
+        // Create new configuration
+        const { error } = await supabase
+          .from('integration_configurations')
+          .insert([{ integration_id: integration.id, configuration_data: configData, is_valid: isConfigValid }]);
+
+        if (error) {
+          console.error('Error creating integration configuration:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to create integration configuration.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Success',
+            description: 'Integration configuration created successfully.',
+          });
+          onSave(); // Notify parent component to refresh data
+        }
+      }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.type || !formData.provider) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('integrations')
-        .insert([{
-          ...formData,
-          user_id: user.id,
-          status: 'inactive',
-          configuration: {
-            api_key: formData.api_key,
-            webhook_url: formData.webhook_url
-          }
-        }]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Integration created successfully!",
-      });
-
-      setFormData({
-        name: "",
-        type: "",
-        provider: "",
-        api_key: "",
-        webhook_url: ""
-      });
-      setShowForm(false);
-      fetchIntegrations();
-    } catch (error) {
-      console.error('Error creating integration:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create integration",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSync = async (integrationId: string) => {
-    await syncWithIntegration(integrationId);
-    fetchIntegrations();
-  };
-
-  const deleteIntegration = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('integrations')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Integration deleted successfully!",
-      });
-
-      fetchIntegrations();
-    } catch (error) {
-      console.error('Error deleting integration:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete integration",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (loading) {
-    return <div className="text-center py-8">Loading integrations...</div>;
-  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Integration Manager</h2>
-        <Button onClick={() => setShowForm(!showForm)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Integration
-        </Button>
-      </div>
-
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Integration</CardTitle>
-            <CardDescription>Connect with external testing tools and platforms</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Integration Name *</Label>
+    <Card>
+      <CardHeader>
+        <CardTitle>{integration.name} Configuration</CardTitle>
+        <CardDescription>{integration.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        {integration.configuration_schema &&
+          Object.entries(integration.configuration_schema.properties).map(
+            ([key, property]: [string, any]) => (
+              <div key={key} className="grid gap-2">
+                <Label htmlFor={key}>{property.title || key}</Label>
+                {property.type === 'string' && (
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="Enter integration name"
-                    required
+                    id={key}
+                    type="text"
+                    placeholder={property.description}
+                    value={configData[key] || ''}
+                    onChange={(e) => handleInputChange(key, e.target.value)}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="provider">Provider *</Label>
-                  <Select value={formData.provider} onValueChange={(value) => setFormData({...formData, provider: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="jira">Jira</SelectItem>
-                      <SelectItem value="confluence">Confluence</SelectItem>
-                      <SelectItem value="slack">Slack</SelectItem>
-                      <SelectItem value="teams">Microsoft Teams</SelectItem>
-                      <SelectItem value="github">GitHub</SelectItem>
-                      <SelectItem value="gitlab">GitLab</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="type">Integration Type *</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="reporting">Reporting</SelectItem>
-                    <SelectItem value="notification">Notification</SelectItem>
-                    <SelectItem value="sync">Data Sync</SelectItem>
-                    <SelectItem value="webhook">Webhook</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="api_key">API Key</Label>
+                )}
+                {property.type === 'integer' && (
                   <Input
-                    id="api_key"
-                    type="password"
-                    value={formData.api_key}
-                    onChange={(e) => setFormData({...formData, api_key: e.target.value})}
-                    placeholder="Enter API key"
+                    id={key}
+                    type="number"
+                    placeholder={property.description}
+                    value={configData[key] || ''}
+                    onChange={(e) => handleInputChange(key, parseInt(e.target.value))}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="webhook_url">Webhook URL</Label>
+                )}
+                 {property.type === 'boolean' && (
                   <Input
-                    id="webhook_url"
-                    value={formData.webhook_url}
-                    onChange={(e) => setFormData({...formData, webhook_url: e.target.value})}
-                    placeholder="Enter webhook URL"
+                    id={key}
+                    type="checkbox"
+                    checked={configData[key] || false}
+                    onChange={(e) => handleInputChange(key, e.target.checked)}
                   />
-                </div>
+                )}
+                {property.type === 'text' && (
+                  <Textarea
+                    id={key}
+                    placeholder={property.description}
+                    value={configData[key] || ''}
+                    onChange={(e) => handleInputChange(key, e.target.value)}
+                  />
+                )}
               </div>
-
-              <div className="flex gap-2">
-                <Button type="submit">Create Integration</Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4">
-        {integrations.map((integration) => (
-          <Card key={integration.id}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <h3 className="font-semibold">{integration.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {integration.provider} • {integration.type}
-                    </p>
-                  </div>
-                  <Badge variant={integration.status === 'active' ? 'default' : 'secondary'}>
-                    {integration.status}
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleSync(integration.id)}
-                    disabled={syncLoading}
-                  >
-                    <upload className="h-4 w-4 mr-2" />
-                    Sync
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => deleteIntegration(integration.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {integrations.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">No integrations configured yet.</p>
-              <Button onClick={() => setShowForm(true)} className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Your First Integration
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
+            )
+          )}
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={!isConfigValid || isLoading}>
+            {isLoading ? 'Saving...' : 'Save Configuration'}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
+
+export default IntegrationManager;

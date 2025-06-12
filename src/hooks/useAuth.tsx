@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email,
       password,
       options: {
+        emailRedirectTo: undefined, // Disable email confirmation
         data: {
           full_name: fullName,
         },
