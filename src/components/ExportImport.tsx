@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { export as exportIcon, import as importIcon, FileText, Download } from "lucide-react";
+import { Download, Upload, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -251,7 +250,7 @@ export const ExportImport = ({ onImportComplete }: ExportImportProps) => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <exportIcon className="h-5 w-5" />
+            <Download className="h-5 w-5" />
             Export Data
           </CardTitle>
           <CardDescription>
@@ -332,7 +331,7 @@ export const ExportImport = ({ onImportComplete }: ExportImportProps) => {
           >
             {exporting ? (
               <>
-                <exportIcon className="mr-2 h-4 w-4 animate-spin" />
+                <Download className="mr-2 h-4 w-4 animate-spin" />
                 Exporting...
               </>
             ) : (
@@ -349,7 +348,7 @@ export const ExportImport = ({ onImportComplete }: ExportImportProps) => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <importIcon className="h-5 w-5" />
+            <Upload className="h-5 w-5" />
             Import Data
           </CardTitle>
           <CardDescription>

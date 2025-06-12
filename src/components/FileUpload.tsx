@@ -1,11 +1,10 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { upload, X, File, Image } from "lucide-react";
+import { Upload, X, File, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -135,7 +134,7 @@ export const FileUpload = ({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <upload className="h-5 w-5" />
+          <Upload className="h-5 w-5" />
           File Upload
         </CardTitle>
         <CardDescription>
@@ -202,12 +201,12 @@ export const FileUpload = ({
           >
             {uploading ? (
               <>
-                <upload className="mr-2 h-4 w-4 animate-spin" />
+                <Upload className="mr-2 h-4 w-4 animate-spin" />
                 Uploading...
               </>
             ) : (
               <>
-                <upload className="mr-2 h-4 w-4" />
+                <Upload className="mr-2 h-4 w-4" />
                 Upload Files
               </>
             )}

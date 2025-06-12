@@ -2,8 +2,7 @@
 import { Navigate } from "react-router-dom";
 
 const Login = () => {
-  // Redirect to dashboard since we removed auth
-  return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/auth" replace />;
 };
 
 export default Login;

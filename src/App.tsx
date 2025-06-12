@@ -9,9 +9,10 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AuthProvider } from "@/hooks/useAuth";
 import { UserMenu } from "@/components/UserMenu";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Import all pages
-import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import TestCases from "./pages/TestCases";
 import Integrations from "./pages/Integrations";
@@ -38,45 +39,55 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <SidebarProvider>
-            <div className="min-h-screen flex w-full">
-              <AppSidebar />
-              <SidebarInset>
-                <header className="flex h-16 items-center gap-2 border-b bg-sidebar px-4">
-                  <SidebarTrigger className="-ml-1" />
-                  <div className="h-4 w-px bg-sidebar-border mx-2" />
-                  <h1 className="text-lg font-semibold">TestFlow Pro</h1>
-                  <div className="ml-auto">
-                    <UserMenu />
-                  </div>
-                </header>
-                <main className="flex-1">
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/test-cases" element={<TestCases />} />
-                    <Route path="/integrations" element={<Integrations />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/marketplace" element={<Marketplace />} />
-                    <Route path="/marketplace/:toolId" element={<MarketplaceTool />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/onboarding" element={<Onboarding />} />
-                    
-                    {/* New routes */}
-                    <Route path="/generate-report" element={<GenerateReport />} />
-                    <Route path="/filter-test-cases" element={<FilterTestCases />} />
-                    <Route path="/setup-wizard" element={<SetupWizard />} />
-                    <Route path="/integration-docs" element={<IntegrationDocs />} />
-                    <Route path="/report-date-range" element={<ReportDateRange />} />
-                    <Route path="/export-report" element={<ExportReport />} />
-                    
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-              </SidebarInset>
-            </div>
-          </SidebarProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <SidebarProvider>
+                    <div className="min-h-screen flex w-full">
+                      <AppSidebar />
+                      <SidebarInset>
+                        <header className="flex h-16 items-center gap-2 border-b bg-sidebar px-4">
+                          <SidebarTrigger className="-ml-1" />
+                          <div className="h-4 w-px bg-sidebar-border mx-2" />
+                          <h1 className="text-lg font-semibold">TestFlow Pro</h1>
+                          <div className="ml-auto">
+                            <UserMenu />
+                          </div>
+                        </header>
+                        <main className="flex-1">
+                          <Routes>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/dashboard" element={<Dashboard />} />
+                            <Route path="/test-cases" element={<TestCases />} />
+                            <Route path="/integrations" element={<Integrations />} />
+                            <Route path="/reports" element={<Reports />} />
+                            <Route path="/marketplace" element={<Marketplace />} />
+                            <Route path="/marketplace/:toolId" element={<MarketplaceTool />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/profile" element={<Profile />} />
+                            <Route path="/onboarding" element={<Onboarding />} />
+                            
+                            {/* New routes */}
+                            <Route path="/generate-report" element={<GenerateReport />} />
+                            <Route path="/filter-test-cases" element={<FilterTestCases />} />
+                            <Route path="/setup-wizard" element={<SetupWizard />} />
+                            <Route path="/integration-docs" element={<IntegrationDocs />} />
+                            <Route path="/report-date-range" element={<ReportDateRange />} />
+                            <Route path="/export-report" element={<ExportReport />} />
+                            
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </main>
+                      </SidebarInset>
+                    </div>
+                  </SidebarProvider>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

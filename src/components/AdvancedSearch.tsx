@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { search, filter, X, Calendar as CalendarIcon } from "lucide-react";
+import { Search, Filter, X, Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 
 interface SearchFilters {
@@ -125,7 +124,7 @@ export const AdvancedSearch = ({ onFiltersChange, onClearFilters }: AdvancedSear
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <search className="h-5 w-5" />
+            <Search className="h-5 w-5" />
             Advanced Search & Filters
             {getActiveFiltersCount() > 0 && (
               <Badge variant="secondary">
@@ -139,7 +138,7 @@ export const AdvancedSearch = ({ onFiltersChange, onClearFilters }: AdvancedSear
               size="sm"
               onClick={() => setShowAdvanced(!showAdvanced)}
             >
-              <filter className="mr-2 h-4 w-4" />
+              <Filter className="mr-2 h-4 w-4" />
               {showAdvanced ? 'Hide' : 'Show'} Filters
             </Button>
             {getActiveFiltersCount() > 0 && (
@@ -163,7 +162,7 @@ export const AdvancedSearch = ({ onFiltersChange, onClearFilters }: AdvancedSear
         <div className="space-y-2">
           <Label htmlFor="search">Search</Label>
           <div className="relative">
-            <search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="search"
               placeholder="Search test cases by title, description..."
